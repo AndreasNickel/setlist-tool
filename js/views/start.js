@@ -2,6 +2,7 @@
 import { h, icon } from '../dom.js';
 import { alleSetlists, alleSongs } from '../db.js';
 import { ladeBeispieldaten } from '../beispieldaten.js';
+import { beobachte } from '../offline.js';
 
 export async function zeigeStart(app) {
   const [setlists, songs] = await Promise.all([alleSetlists(), alleSongs()]);
@@ -21,7 +22,8 @@ export async function zeigeStart(app) {
     : h(
         'div.start-leer',
         h('p', 'Auf diesem Gerät gibt es noch keine Setlist.'),
-        h('p', 'Setlists werden am Laptop im Editor angelegt.'),
+        h('p', 'Setlists werden am Laptop angelegt und als Datei übertragen.'),
+        h('a.knopf', { href: '#/sichern' }, 'Exportdatei importieren'),
         songs.length
           ? null
           : h(
@@ -37,14 +39,23 @@ export async function zeigeStart(app) {
             )
       );
 
+  const hinweis = h('p.start-hinweis', { role: 'status' });
   app.append(
     h(
       'div.start',
       h('header.start-kopf', h('h1', 'Setlist wählen'), h('a.knopf-icon', { href: '#/einstellungen', 'aria-label': 'Einstellungen' }, icon('zahnrad', 28))),
       liste,
-      h('footer.start-fuss', h('a', { href: '#/editor' }, icon('stift', 20), ' Setlists bearbeiten (Laptop)'))
+      hinweis,
+      h(
+        'footer.start-fuss',
+        h('a', { href: '#/editor' }, icon('stift', 20), ' Setlists bearbeiten (Laptop)'),
+        h('a', { href: '#/sichern' }, 'Sichern & Übertragen')
+      )
     )
   );
+  return beobachte((st) => {
+    hinweis.textContent = st.update ? 'Eine neue Version ist geladen und wird beim nächsten Start der App übernommen.' : '';
+  });
 }
 
 export function datumText(iso) {

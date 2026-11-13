@@ -386,3 +386,30 @@ p.es-hinweis { margin: 24px 0 0; }
 .wi-konflikt label { color: var(--p-text); cursor: pointer; }
 .wi-zusammenfassung { font-size: 14px; color: var(--p-leise); }
 .wi-hinweise { margin: 0; padding: 0; list-style: none; font-size: 14px; color: var(--p-warn); display: flex; flex-direction: column; gap: 4px; max-height: 120px; overflow-y: auto; }
+
+/* ---------- Start: Hinweise ---------- */
+.start-hinweis { color: var(--grau); font-size: 17px; margin: 16px 0 0; }
+.start-hinweis:empty { display: none; }
+.start-fuss { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.start-leer a.knopf { margin-top: 16px; text-decoration: none; }
+
+/* ---------- Sichern & Übertragen ---------- */
+.si-seite { min-height: 100%; display: flex; flex-direction: column; }
+.si { width: 100%; max-width: 780px; margin: 0 auto; padding: 24px 24px 60px; display: flex; flex-direction: column; gap: 22px; font-size: 17px; line-height: 1.45; }
+.si h1 { font-size: 28px; }
+.si-block { background: #fff; border: 1px solid var(--p-linie-fein); border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; }
+.si-block h2 { font-size: 15px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--p-leise); }
+.si p { margin: 0; }
+.si-klein { font-size: 15px; color: var(--p-leise); }
+.si-knoepfe { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.si .knopf { background: var(--p-blau); color: #fff; min-height: 48px; font-size: 18px; text-decoration: none; align-self: flex-start; }
+.si .knopf:disabled { opacity: .5; }
+.si .knopf-klein { border-color: var(--p-linie); background: #fff; color: var(--p-text); min-height: 44px; font-size: 16px; }
+.si-meldung { color: var(--p-blau); }
+.si-meldung:empty { display: none; }
+.si-karte { border: 1px solid var(--p-linie); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; background: var(--p-grund); }
+.si-karte ol { margin: 0; padding-left: 22px; }
+.si-warnung { color: var(--p-warn); font-weight: 700; }
+.si-update { color: var(--p-blau); display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.si-datei-knopf { cursor: pointer; }
+.si-seite .ed-kopf { flex-wrap: wrap; height: auto; min-height: 60px; row-gap: 6px; padding-top: 8px; padding-bottom: 8px; }

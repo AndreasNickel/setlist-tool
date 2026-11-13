@@ -26,7 +26,7 @@ export async function zeigeEditor(app, setlistId) {
   }
 
   // ---- Kopfleiste ----
-  const kopf = pflegeKopf('setlists', setlist ? h('a.knopf-hell', { href: '#/buehne/' + encodeURIComponent(setlist.id) }, 'Auf der Bühne öffnen') : null);
+  const kopf = pflegeKopf('setlists', setlist ? h('a.ed-kopf-link', { href: '#/buehne/' + encodeURIComponent(setlist.id) }, 'Auf der Bühne öffnen') : null);
 
   // ---- Linke Spalte: Auftritte ----
   const neu = async () => {
