@@ -2,7 +2,7 @@
 // mit Erkennung je Zeile, rechts die Live-Vorschau der Bühnen-Übersicht.
 import { h, icon } from '../dom.js';
 import { alleSetlists, alleSongs, hole, loesche, neueId, speichereSetlist, speichereSong } from '../db.js';
-import { loeseAuf, speicherform, editorText, uebersichtZeilen, darstellungVon } from '../setlist-modell.js';
+import { loeseAuf, speicherform, editorText, uebersichtZeilen, darstellungVon, zeileMitTitel } from '../setlist-modell.js';
 import { normalisiere } from '../titelsuche.js';
 import { setlistListe } from './liste.js';
 import { datumText } from './start.js';
@@ -11,6 +11,21 @@ import { pflegeKopf } from './pflege-kopf.js';
 
 const DARSTELLUNG = { titel: 'nur Titel', text: 'Text', akkorde: 'Akkorde' };
 const heute = () => new Date().toISOString().slice(0, 10);
+
+// Vorschau ein-/ausgeklappt – pro Gerät gemerkt; ohne Wahl nur auf breiten Bildschirmen sichtbar.
+const VORSCHAU_SCHLUESSEL = 'ed-vorschau';
+function vorschauSichtbar() {
+  try {
+    const wert = localStorage.getItem(VORSCHAU_SCHLUESSEL);
+    if (wert) return wert === 'an';
+  } catch {}
+  return window.innerWidth >= 1280;
+}
+function merkeVorschau(an) {
+  try {
+    localStorage.setItem(VORSCHAU_SCHLUESSEL, an ? 'an' : 'aus');
+  } catch {}
+}
 
 export async function zeigeEditor(app, setlistId) {
   let [setlists, songs] = await Promise.all([alleSetlists(), alleSongs()]);
@@ -147,20 +162,33 @@ export async function zeigeEditor(app, setlistId) {
     statistik,
     speicherStand
   );
+  const vorschauKnopf = h('button.knopf-klein.ed-vorschau-knopf', { type: 'button', 'aria-controls': 'ed-vorschau' });
 
   // ---- Rechts: Vorschau ----
   const vorschauListe = h('div.ue-scroll');
   const vorschauName = h('h1.ue-name');
   const vorschau = h(
     'aside.ed-rechts',
+    { id: 'ed-vorschau' },
     h('h2', 'Vorschau iPad'),
     h('div.ed-ipad', h('div.ed-ipad-bild', h('div.ue', h('header.ue-kopf', vorschauName, h('span.ue-fortschritt', 'Vorschau')), vorschauListe))),
     h('p.ed-klein', 'Live – so erscheint die Übersicht auf der Bühne')
   );
 
-  app.append(
-    h('div.ed', kopf, h('div.ed-rumpf', seitenleiste, h('section.ed-mitte', felder, rahmen, legende), vorschau))
-  );
+  const rumpf = h('div.ed-rumpf', seitenleiste, h('section.ed-mitte', felder, rahmen, legende), vorschau);
+  const zeigeVorschau = (an) => {
+    rumpf.classList.toggle('ohne-vorschau', !an);
+    vorschauKnopf.textContent = an ? 'Vorschau ausblenden ›' : '‹ Vorschau einblenden';
+    vorschauKnopf.setAttribute('aria-expanded', String(an));
+  };
+  zeigeVorschau(vorschauSichtbar());
+  vorschauKnopf.addEventListener('click', () => {
+    const an = rumpf.classList.contains('ohne-vorschau');
+    merkeVorschau(an);
+    zeigeVorschau(an);
+  });
+  legende.append(vorschauKnopf);
+  app.append(h('div.ed', kopf, rumpf));
 
   // ---- Abgleich und Anzeige ----
   let eintraege = [];
@@ -213,7 +241,17 @@ export async function zeigeEditor(app, setlistId) {
       const s = e.kandidaten[0];
       const gleich = normalisiere(s.titel) === normalisiere(e.eingabe);
       const link = h('a.ed-songlink', { href: '#/songs/' + encodeURIComponent(s.id), title: 'Song im Bestand bearbeiten' }, DARSTELLUNG[darstellungVon(s)]);
-      return ['ok', [gleich ? '' : `→ ${s.titel} · `, link]];
+      if (e.eingabe === s.titel) return ['ok', link];
+      // Schreibweise weicht vom Bestand ab → Titel aus dem Bestand übernehmen (Kurzinfo bleibt)
+      const uebernehmen = h('button.ed-mini.ed-uebernehmen', { type: 'button', title: `„${e.eingabe}“ durch „${s.titel}“ ersetzen` }, 'Titel im Bestand übernehmen');
+      uebernehmen.addEventListener('click', () => {
+        const zeilen = textfeld.value.split('\n');
+        zeilen[e.zeile] = zeileMitTitel(zeilen[e.zeile].trim(), s.titel);
+        if (e.gewaehlt) wahl[normalisiere(s.titel)] = s.id;
+        textfeld.value = zeilen.join('\n');
+        geaendert();
+      });
+      return ['ok', [gleich ? null : h('span.ed-ziel', `→ ${s.titel}`), uebernehmen, link]];
     }
     if (e.status === 'mehrdeutig') {
       const auswahl = h(

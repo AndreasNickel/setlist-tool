@@ -228,8 +228,8 @@ p.es-hinweis { margin: 24px 0 0; }
 .es-probe { overflow: visible; padding-top: 4px; padding-bottom: 4px; }
 
 /* ---------- Editor (Laptop) ---------- */
-.ed { display: flex; flex-direction: column; height: 100%; min-width: 1100px; }
-.ed-kopf { display: flex; align-items: center; gap: 24px; height: 60px; padding: 0 24px; background: var(--p-text); color: var(--weiss); flex-shrink: 0; }
+.ed { display: flex; flex-direction: column; height: 100%; }
+.ed-kopf { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 24px; min-height: 60px; padding: 8px 24px; background: var(--p-text); color: var(--weiss); flex-shrink: 0; }
 .ed-marke { font-size: 19px; font-weight: 700; }
 .ed-nav { display: flex; gap: 4px; }
 .ed-nav a, .ed-nav span { font-size: 16px; padding: 8px 14px; border-radius: 8px; text-decoration: none; }
@@ -284,6 +284,8 @@ p.es-hinweis { margin: 24px 0 0; }
 .ed-hinweise { border-left: 1px solid var(--p-linie-fein); padding-left: 12px; padding-right: 10px; font-size: 14px; color: var(--p-leise); }
 .ed-hinweis { display: flex; align-items: center; gap: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ed-hinweis.warnung { color: var(--p-warn); }
+.ed-ziel { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.ed-hinweis > .ed-mini, .ed-hinweis > a { flex-shrink: 0; }
 .ed-mini { font-size: 13px; padding: 1px 8px; border-radius: 6px; border: 1px solid #c98a2d; background: #fff7e6; color: var(--p-warn); cursor: pointer; line-height: 1.5; }
 .ed-auswahl { font-size: 13px; padding: 1px 4px; border-radius: 6px; border: 1px solid #c98a2d; background: #fff7e6; color: var(--p-warn); max-width: 100%; }
 
@@ -460,3 +462,111 @@ body.druck #app { height: auto; }
   .dr-leiste { display: none; }
   .dr-blatt { max-width: none; min-height: 0; margin: 0; padding: 0; box-shadow: none; }
 }
+
+/* ---------- Editor: schmalere Fenster und Touch (z. B. iPad Pro) ---------- */
+.ed-uebernehmen { border-color: #8fb3de; background: #eef4fb; color: var(--p-blau); }
+.ed-rumpf.ohne-vorschau .ed-rechts { display: none; }
+.ed-legende .ed-vorschau-knopf { margin-left: auto; }
+@media (max-width: 1240px) {
+  .ed-kopf { gap: 6px 16px; padding-left: 16px; padding-right: 16px; }
+  .ed-links { width: 210px; }
+  .ed-mitte { padding: 14px 16px; }
+  .ed-rechts { width: 340px; padding: 14px 12px; }
+  .ed-ipad { --skala: 0.36; }
+  .ed-legende { gap: 8px 16px; }
+}
+@media (pointer: coarse) {
+  .ed .knopf-klein, .ed-nav a { min-height: 44px; display: inline-flex; align-items: center; }
+  .ed-kopf-link { display: inline-flex; align-items: center; min-height: 44px; }
+  .ed-auftritt { min-height: 52px; justify-content: center; }
+}
+
+/* ===================== Bühne: Reihenfolge ändern (Bearbeitungsmodus) ===================== */
+/* Alle Tippflächen mindestens 44 px (hier 56 px), dunkles Bühnenschema. */
+.ue-kopf .knopf-klein { white-space: nowrap; }
+.ue-hinweis {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex-shrink: 0;
+  padding: 10px 28px; background: var(--flaeche); border-bottom: 1px solid var(--linie);
+  font-size: 18px; color: var(--weiss);
+}
+.ue-hinweis-text { flex: 1 1 260px; }
+.ue-hinweis-knopf { border-color: var(--hellblau) !important; color: var(--hellblau); }
+.start-export {
+  min-height: 44px; padding: 0 4px; border: 0; background: none; color: var(--grau);
+  font-size: 18px; text-decoration: underline; cursor: pointer;
+}
+
+.ub [hidden] { display: none !important; }
+.ub-kopf { gap: 16px; }
+.ub-kopf-text { display: flex; flex-direction: column; flex-grow: 1; min-width: 0; }
+.ub-kopf-name { font-size: 17px; color: var(--grau); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ub-fertig { min-height: 52px; }
+
+.ub-einfuegen { flex-shrink: 0; padding: 12px 28px; border-bottom: 1px solid var(--linie); display: flex; flex-direction: column; gap: 8px; position: relative; }
+.ub-suche {
+  width: 100%; min-height: 56px; padding: 0 16px; font-size: 20px;
+  border: 1px solid var(--dunkelgrau); border-radius: 10px; background: var(--flaeche); color: var(--weiss);
+}
+.ub-suche::placeholder { color: var(--grau); }
+.ub-suche:focus { outline: 2px solid var(--hellblau); outline-offset: 1px; }
+.ub-treffer { display: flex; flex-direction: column; gap: 6px; }
+.ub-treffer:empty { display: none; }
+.ub-treffer-knopf {
+  display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 0 16px;
+  border: 1px solid var(--linie); border-radius: 10px; background: var(--flaeche); color: var(--weiss);
+  font-size: 20px; text-align: left; cursor: pointer;
+}
+.ub-treffer-knopf:active { background: #24232a; }
+.ub-treffer-knopf svg { color: var(--hellblau); flex-shrink: 0; }
+.ub-treffer-titel { flex-grow: 1; font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ub-treffer-art { font-size: 16px; color: var(--grau); }
+.ub-kein-treffer { margin: 0; color: var(--grau); font-size: 17px; }
+.ub-ziel { margin: 0; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 16px; color: var(--grau); }
+.ub-knopf-text { min-height: 44px; padding: 0 8px; border: 0; background: none; color: var(--hellblau); font-size: 16px; text-decoration: underline; cursor: pointer; }
+
+.ub-scroll { padding-bottom: 120px; }
+.ub-liste { list-style: none; margin: 0; padding: 0 20px; }
+.ub-zeile {
+  display: flex; align-items: center; gap: 6px; min-height: 64px; padding: 4px 0;
+  border-bottom: 1px solid var(--linie-fein); background: var(--schwarz);
+}
+.ub-zeile.gewaehlt { box-shadow: inset 4px 0 0 var(--hellblau); background: #10161f; }
+.ub-zeile.bewegt { animation: ub-blinken 1s ease-out; }
+@keyframes ub-blinken { from { background: #1d2a3a; } to { background: var(--schwarz); } }
+.ub-zeile.ziehen { position: relative; z-index: 2; background: #1d2a3a; box-shadow: 0 6px 18px rgba(0, 0, 0, .6); border-radius: 8px; }
+body.ub-zieht, body.ub-zieht * { user-select: none; -webkit-user-select: none; cursor: grabbing; }
+
+.ub-griff, .ub-knopf {
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 56px; height: 56px; border-radius: 10px; border: 1px solid var(--linie);
+  background: none; color: var(--grau); cursor: pointer;
+}
+.ub-griff { border-color: transparent; cursor: grab; touch-action: none; }
+.ub-knopf:active, .ub-griff:active { background: var(--flaeche); color: var(--weiss); }
+.ub-knopf:disabled { opacity: .3; cursor: default; }
+.ub-weg { color: #ff9b8f; }
+.ub-griff:focus-visible, .ub-knopf:focus-visible, .ub-inhalt:focus-visible { outline: 2px solid var(--hellblau); outline-offset: 2px; }
+
+.ub-inhalt {
+  display: flex; align-items: center; gap: 14px; flex-grow: 1; min-width: 0; min-height: 56px;
+  padding: 4px 8px; border: 0; border-radius: 8px; background: none; color: var(--weiss);
+  text-align: left; cursor: pointer;
+}
+.ub-nr { width: 34px; flex-shrink: 0; text-align: right; color: var(--grau); font-size: calc(var(--titel-groesse) * .7); }
+.ub-text { display: flex; flex-direction: column; min-width: 0; }
+.ub-titel { font-size: calc(var(--titel-groesse) * .8); font-weight: 700; line-height: 1.15; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ub-info { font-size: calc(var(--info-groesse) * .9); color: var(--grau); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ub-set { font-size: calc(var(--titel-groesse) * .66); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--hellblau); }
+.ub-notiz { font-size: calc(var(--info-groesse) * .95); font-style: italic; color: var(--gelb); padding-left: 48px; }
+.ub-set-zeile { margin-top: 14px; border-bottom-color: var(--linie); }
+
+.ub-meldung {
+  position: fixed; left: 50%; transform: translateX(-50%); bottom: max(20px, env(safe-area-inset-bottom));
+  display: flex; align-items: center; gap: 16px; max-width: calc(100% - 32px);
+  padding: 8px 8px 8px 20px; border-radius: 12px; background: #2b2a30; color: var(--weiss);
+  font-size: 18px; box-shadow: 0 6px 24px rgba(0, 0, 0, .5); z-index: 5;
+}
+.ub-meldung-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ub-rueckgaengig { min-height: 48px; padding: 0 18px; border: 0; border-radius: 10px; background: var(--hellblau); color: var(--schwarz); font-size: 18px; font-weight: 700; cursor: pointer; flex-shrink: 0; }
+.ub-treffer-schon { font-size: 16px; color: var(--gelb); white-space: nowrap; }
+.ue-hinweis .knopf-icon { border: 0; background: none; cursor: pointer; }

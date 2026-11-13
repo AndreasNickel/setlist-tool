@@ -3,8 +3,20 @@ import { h, icon } from '../dom.js';
 import { hole, alleSongs, gespielt as ladeGespielt, setzeGespielt } from '../db.js';
 import { uebersichtZeilen } from '../setlist-modell.js';
 import { setlistListe } from './liste.js';
+import { zeigeBearbeitung } from './uebersicht-bearbeiten.js';
+import { exportiereJetzt } from '../austausch.js';
 
 const scrollSchluessel = (id) => 'scroll:' + id;
+const geaendertSchluessel = (id) => 'geaendert:' + id;
+
+function sitzung(schluessel, wert) {
+  try {
+    if (wert === undefined) return sessionStorage.getItem(schluessel);
+    if (wert === null) sessionStorage.removeItem(schluessel);
+    else sessionStorage.setItem(schluessel, wert);
+  } catch {}
+  return null;
+}
 
 export async function zeigeUebersicht(app, setlistId) {
   const [setlist, songs] = await Promise.all([hole('setlists', setlistId), alleSongs()]);
@@ -48,6 +60,48 @@ export async function zeigeUebersicht(app, setlistId) {
     zeichne();
   };
 
+  // ---- Kurzfristige Änderungen (Bearbeitungsmodus) ----
+  const bearbeiten = () => {
+    sitzung(scrollSchluessel(setlistId), String(bereich.scrollTop));
+    zeigeBearbeitung(app, {
+      setlist,
+      songs,
+      gespielt,
+      fertig: (gespeichert) => {
+        if (gespeichert) sitzung(geaendertSchluessel(setlistId), '1');
+        window.dispatchEvent(new HashChangeEvent('hashchange')); // Übersicht neu aufbauen
+      },
+    });
+  };
+
+  // Nach einer Änderung am iPad: Hinweis, den Stand für den Laptop zu exportieren
+  function exportHinweis() {
+    if (!sitzung(geaendertSchluessel(setlistId))) return null;
+    const text = h('span.ue-hinweis-text', 'Änderung gespeichert. Damit sie auf den Laptop kommt, den Stand exportieren.');
+    const knopf = h('button.knopf-klein.ue-hinweis-knopf', { type: 'button' }, 'Exportieren');
+    const hinweis = h(
+      'div.ue-hinweis',
+      { role: 'status' },
+      text,
+      knopf,
+      h('button.knopf-icon', { type: 'button', 'aria-label': 'Hinweis schließen', onclick: () => { sitzung(geaendertSchluessel(setlistId), null); hinweis.remove(); } }, icon('kreuz', 22))
+    );
+    knopf.addEventListener('click', async () => {
+      knopf.disabled = true;
+      try {
+        const meldung = await exportiereJetzt();
+        if (meldung) {
+          text.textContent = meldung + ' Auf dem NAS ablegen und am Laptop importieren.';
+          sitzung(geaendertSchluessel(setlistId), null);
+        }
+      } catch (e) {
+        text.textContent = 'Export fehlgeschlagen: ' + (e?.message || e);
+      }
+      knopf.disabled = false;
+    });
+    return hinweis;
+  }
+
   app.append(
     h(
       'div.ue',
@@ -56,15 +110,19 @@ export async function zeigeUebersicht(app, setlistId) {
         h('a.knopf-icon', { href: '#/', 'aria-label': 'Setlist wechseln' }, icon('start', 26)),
         h('h1.ue-name', setlist.name || 'Setlist'),
         fortschritt,
+        h('button.knopf-klein', { type: 'button', onclick: bearbeiten }, 'Reihenfolge ändern'),
         h('button.knopf-klein', { type: 'button', onclick: zuruecksetzen }, 'Zurücksetzen')
       ),
+      exportHinweis(),
       bereich
     )
   );
   zeichne();
 
   // Scrollposition merken und beim Zurückkommen von der Songseite wiederherstellen
-  const gemerkt = Number(sessionStorage.getItem(scrollSchluessel(setlistId)) || 0);
+  const gemerkt = Number(sitzung(scrollSchluessel(setlistId)) || 0);
   requestAnimationFrame(() => (bereich.scrollTop = gemerkt));
-  return () => sessionStorage.setItem(scrollSchluessel(setlistId), String(bereich.scrollTop));
+  return () => {
+    if (bereich.isConnected) sitzung(scrollSchluessel(setlistId), String(bereich.scrollTop));
+  };
 }

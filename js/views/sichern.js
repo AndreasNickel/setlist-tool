@@ -3,7 +3,7 @@
 import { h } from '../dom.js';
 import { alleSongs, alleSetlists } from '../db.js';
 import {
-  erstelleExport, exportDatei, gibDateiAus, pruefeImport, fuehreImportAus, letzteAenderung, merkeAustausch, ladeAustausch,
+  erstelleExport, exportDatei, gibDateiAus, pruefeImport, fuehreImportAus, letzteAenderung, neuereSetlists, merkeAustausch, ladeAustausch,
 } from '../austausch.js';
 import { beobachte, fordereStandAn, pruefeUpdate, speicherDauerhaft, istInstalliert } from '../offline.js';
 import { pflegeKopf } from './pflege-kopf.js';
@@ -78,13 +78,27 @@ export async function zeigeSichern(app) {
     }
     const lokal = await letzteAenderung();
     const neuer = lokal && daten.exportiert && lokal > daten.exportiert;
+    const betroffen = neuereSetlists(await alleSetlists(), daten);
     importErgebnis.append(
       h(
         'div.si-karte',
         h('p', h('strong', datei.name)),
         h('p', `Stand: ${zeit(daten.exportiert)} · ${daten.songs.length} Songs · ${daten.setlists.length} Setlists`),
         h('p.si-warnung', 'Der Import ersetzt alle Songs und Setlists auf diesem Gerät.'),
-        neuer ? h('p.si-warnung', `Achtung: Auf diesem Gerät gibt es neuere Änderungen (${zeit(lokal)}) als in der Datei. Diese gehen verloren.`) : null,
+        betroffen.length
+          ? h(
+              'div.si-betroffen',
+              h('p.si-warnung', betroffen.length === 1 ? 'Achtung: Diese Setlist ist auf diesem Gerät neuer als in der Datei und ginge verloren:' : `Achtung: Diese ${betroffen.length} Setlists sind auf diesem Gerät neuer als in der Datei und gingen verloren:`),
+              h(
+                'ul',
+                betroffen.map((l) => h('li', h('strong', l.name), ` – hier geändert ${zeit(l.geaendert)}`, l.inDatei ? '' : ' (nicht in der Datei)'))
+              ),
+              h('p.si-klein', 'Tipp: Vorher den Stand dieses Geräts exportieren, dann geht nichts verloren.'),
+              h('button.knopf-klein', { type: 'button', onclick: () => exportieren(kannTeilen && istIpad) }, 'Erst diesen Stand exportieren')
+            )
+          : neuer
+            ? h('p.si-warnung', `Achtung: Auf diesem Gerät gibt es neuere Änderungen (${zeit(lokal)}) als in der Datei. Diese gehen verloren.`)
+            : null,
         h(
           'div.si-knoepfe',
           h(
@@ -105,7 +119,7 @@ export async function zeigeSichern(app) {
                 }
               },
             },
-            'Importieren'
+            betroffen.length ? 'Trotzdem importieren' : 'Importieren'
           ),
           h('button.knopf-klein', { type: 'button', onclick: () => { importErgebnis.replaceChildren(); dateiWahl.value = ''; } }, 'Abbrechen')
         )

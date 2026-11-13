@@ -76,3 +76,9 @@ export function uebersichtZeilen(eintraege, songs) {
 export function seitenIndexe(zeilen) {
   return zeilen.filter((z) => z.art === 'song' && z.darstellung !== 'titel').map((z) => z.index);
 }
+
+/** Ersetzt in einer Setlist-Zeile den Titel und behält eine Kurzinfo („Titel | Info“). */
+export function zeileMitTitel(zeile, titel) {
+  const trenner = zeile.indexOf('|');
+  return trenner >= 0 ? `${titel} ${zeile.slice(trenner).trim()}`.replace(/\s*\|\s*/, ' | ') : titel;
+}
