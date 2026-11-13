@@ -3,12 +3,14 @@
 //   #/buehne/<id>          Übersicht einer Setlist (Bühne)
 //   #/buehne/<id>/<nr>     Songseite (nr = Eintragsnummer in der Setlist)
 //   #/editor[/<id>]        Setlist-Editor (Laptop)
+//   #/songs[/<id>]         Song-Bestand (Laptop)
 //   #/einstellungen        Schriftgrößen usw.
 import { ladeEinstellungen } from './einstellungen.js';
 import { zeigeStart } from './views/start.js';
 import { zeigeUebersicht } from './views/uebersicht.js';
 import { zeigeSongseite } from './views/songseite.js';
 import { zeigeEditor } from './views/editor.js';
+import { zeigeSongs } from './views/songs.js';
 import { zeigeEinstellungen } from './views/einstellungen.js';
 import { wachHalten } from './wachhalten.js';
 
@@ -36,6 +38,10 @@ async function navigiere() {
       document.body.className = 'pflege';
       wachHalten(false);
       aufraeumen = await zeigeEditor(app, a);
+    } else if (bereich === 'songs') {
+      document.body.className = 'pflege';
+      wachHalten(false);
+      aufraeumen = await zeigeSongs(app, a);
     } else if (bereich === 'einstellungen') {
       document.body.className = 'buehne';
       wachHalten(false);

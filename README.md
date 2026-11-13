@@ -21,6 +21,7 @@ und im Browser öffnen:
 
 - `http://localhost:8000/` – Bühne (Setlist wählen, Übersicht, Songseiten)
 - `http://localhost:8000/#/editor` – Setlists bearbeiten (Laptop)
+- `http://localhost:8000/#/songs` – Song-Bestand (Laptop)
 - `http://localhost:8000/tests/` – Tests der Logik
 
 Zum Ausprobieren gibt es auf der leeren Startseite „Beispieldaten laden“ (nur Platzhaltertexte).
@@ -28,8 +29,14 @@ Testen am Laptop mit iPad-Fenstergröße 834 × 1194 (Entwicklerwerkzeuge → Ge
 
 ## Stand
 
-Stufe 1: Bühnenansicht (Übersicht, Songseite mit Text/Akkorden/Markierungen, Wischen,
-„gespielt“), Setlist-Editor mit Live-Vorschau, Einstellungen für Schriftgrößen.
-Song-Bestand (Stufe 2), Word-Import (Stufe 3) und Offline/Export (Stufe 4) folgen.
+- **Stufe 1:** Bühnenansicht (Übersicht, Songseite mit Text/Akkorden/Markierungen, Wischen,
+  „gespielt“), Setlist-Editor mit Live-Vorschau, Einstellungen für Schriftgrößen.
+- **Stufe 2:** Song-Bestand mit Suche und Filter, Texteingabe mit Akkorden (`[Am]`), Abschnitten
+  (`Refrain:`) und Markierungen (`> `, Knopf „Markieren“ bzw. Strg+M), Umwandlung
+  „Akkordzeile über Textzeile“ beim Einfügen, Vorschau der Songseite.
+
+Word-Import (Stufe 3) und Offline/Export (Stufe 4) folgen.
+
+Veröffentlicht: https://andreasnickel.github.io/setlist-tool/
 
 Schrift: Atkinson Hyperlegible (SIL Open Font License, siehe `fonts/OFL.txt`).

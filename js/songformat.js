@@ -37,6 +37,30 @@ export function hatAkkorde(inhalt) {
 }
 
 /**
+ * Schaltet die Markierung („> “ am Zeilenanfang) für alle Zeilen der Auswahl um.
+ * Sind alle betroffenen Zeilen markiert, wird die Markierung entfernt, sonst gesetzt.
+ * Leerzeilen und Abschnittsnamen bleiben unberührt.
+ * Ergebnis: { text, start, ende } – die neue Auswahl umfasst die ganzen Zeilen.
+ */
+export function schalteMarkierung(text, start, ende) {
+  const vorStart = text.lastIndexOf('\n', start - 1) + 1;
+  let bisEnde = text.indexOf('\n', ende > start && text[ende - 1] === '\n' ? ende - 1 : ende);
+  if (bisEnde < 0) bisEnde = text.length;
+  const zeilen = text.slice(vorStart, bisEnde).split('\n');
+  const betroffen = (z) => z.trim() && !ABSCHNITT.test(z.trim());
+  const relevante = zeilen.filter(betroffen);
+  if (!relevante.length) return { text, start, ende };
+  const alleMarkiert = relevante.every((z) => /^\s*>/.test(z));
+  const neu = zeilen.map((z) => {
+    if (!betroffen(z)) return z;
+    if (alleMarkiert) return z.replace(/^(\s*)>\s?/, '$1');
+    return /^\s*>/.test(z) ? z : '> ' + z;
+  });
+  const block = neu.join('\n');
+  return { text: text.slice(0, vorStart) + block + text.slice(bisEnde), start: vorStart, ende: vorStart + block.length };
+}
+
+/**
  * Zerlegt den Songinhalt in Abschnitte:
  * [{ name: 'Refrain' | '', zeilen: [{ markiert, segmente: [{ akkord, text }] }] }]
  */
