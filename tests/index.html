@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Tests – Setlist-Tool</title>
+<style>
+body { font-family: system-ui, sans-serif; margin: 24px; }
+.ok { color: #176b2c; } .fehler { color: #a11; font-weight: bold; }
+pre { margin: 0 0 0 1.5em; color: #555; }
+</style>
+</head>
+<body>
+<h1>Tests</h1>
+<p id="ergebnis">läuft …</p>
+<ul id="liste"></ul>
+<script type="module">
+import { tests } from './tests.js';
+
+const liste = document.getElementById('liste');
+let fehler = 0;
+for (const [name, fn] of tests) {
+  const li = document.createElement('li');
+  try {
+    await fn();
+    li.className = 'ok';
+    li.textContent = '✓ ' + name;
+  } catch (e) {
+    fehler++;
+    li.className = 'fehler';
+    li.textContent = '✗ ' + name;
+    const pre = document.createElement('pre');
+    pre.textContent = e?.message || String(e);
+    li.append(pre);
+  }
+  liste.append(li);
+}
+const erg = document.getElementById('ergebnis');
+erg.textContent = fehler ? `FEHLGESCHLAGEN: ${fehler} von ${tests.length}` : `ALLE ${tests.length} TESTS BESTANDEN`;
+erg.className = fehler ? 'fehler' : 'ok';
+</script>
+</body>
+</html>
