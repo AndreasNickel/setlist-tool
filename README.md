@@ -23,6 +23,7 @@ und im Browser öffnen:
 - `http://localhost:8000/#/editor` – Setlists bearbeiten (Laptop)
 - `http://localhost:8000/#/songs` – Song-Bestand (Laptop)
 - `http://localhost:8000/#/import` – Word-Import (Laptop)
+- `http://localhost:8000/#/sichern` – Sichern & Übertragen (Export/Import, Offline-Status)
 - `http://localhost:8000/tests/` – Tests der Logik
 
 Zum Ausprobieren gibt es auf der leeren Startseite „Beispieldaten laden“ (nur Platzhaltertexte).
@@ -35,12 +36,25 @@ Testen am Laptop mit iPad-Fenstergröße 834 × 1194 (Entwicklerwerkzeuge → Ge
 - **Stufe 2:** Song-Bestand mit Suche und Filter, Texteingabe mit Akkorden (`[Am]`), Abschnitten
   (`Refrain:`) und Markierungen (`> `, Knopf „Markieren“ bzw. Strg+M), Umwandlung
   „Akkordzeile über Textzeile“ beim Einfügen, Vorschau der Songseite.
-
 - **Stufe 3:** Word-Import (.docx, direkt im Browser, ohne Upload): Titel, Abschnitte,
   Akkordzeilen über Text (Position über die Zeichenbreiten der Originalschrift, auch bei
   Proportionalschrift), Textmarker/Schriftfarbe als Markierung; Prüfansicht Original | Ergebnis | Vorschau.
+- **Stufe 4:** iPad-Betrieb: Export aller Songs und Setlists als `.setlist.json` (Download oder
+  „Teilen / In Dateien sichern“), Import mit Prüfung und Warnung bei neueren Daten auf dem Gerät,
+  Offline-Betrieb per Service Worker, Installation als App auf dem Home-Bildschirm.
 
-Offline/Export (Stufe 4) folgt.
+## iPad einrichten
+
+1. https://andreasnickel.github.io/setlist-tool/ in Safari öffnen.
+2. Teilen-Symbol → „Zum Home-Bildschirm“.
+3. Die App vom Home-Bildschirm starten und unter „Sichern & Übertragen“ die Exportdatei importieren
+   (z. B. vom NAS über die Dateien-App). Die Home-Bildschirm-App hat einen eigenen Speicher, getrennt von Safari.
+
+Danach läuft die App ohne Internet. Neue Versionen lädt sie bei Internetverbindung im Hintergrund
+und übernimmt sie beim nächsten Start, nie mitten im Auftritt. Auf `localhost` gilt „Netz zuerst“,
+damit Änderungen bei der Entwicklung sofort sichtbar sind.
+
+Neue Dateien der App müssen in `sw.js` (Liste `DATEIEN`) eingetragen werden; ein Test prüft das.
 
 Veröffentlicht: https://andreasnickel.github.io/setlist-tool/
 

@@ -7,6 +7,7 @@ import { leseZip, zipText } from '../js/zip.js';
 import { leseDocx } from '../js/docx.js';
 import { wandleWordDokument } from '../js/word-import.js';
 import { zip, baueDocx } from './docx-bauer.js';
+import { pruefeImport, dateiname } from '../js/austausch.js';
 import { loeseAuf, speicherform, editorText, uebersichtZeilen } from '../js/setlist-modell.js';
 
 export const tests = [];
@@ -301,4 +302,87 @@ test('Word-Import: ohne Akkorde → Darstellung Text, leere Absätze zusammengef
   const doc = { absaetze: [{ zeilen: [[]] }, { zeilen: [[t('Titel')]] }, { zeilen: [[]] }, { zeilen: [[t('A eins')]] }, { zeilen: [[]] }, { zeilen: [[]] }, { zeilen: [[t('B zwei')]] }, { zeilen: [[]] }] };
   const r = wandleWordDokument(doc, mono);
   gleich([r.titel, r.inhalt, r.darstellung], ['Titel', 'A eins\n\nB zwei', 'text']);
+});
+
+// ---- Export/Import ----
+const EXPORT = {
+  format: 'setlist-tool',
+  version: 1,
+  exportiert: '2026-11-13T10:00:00.000Z',
+  songs: [
+    { id: 's1', titel: 'Erster Song', darstellung: 'akkorde', kurzinfo: 'Capo 2', inhalt: '[Am]‹Zeile›', geaendert: '2026-11-12T10:00:00.000Z', fremd: 'weg' },
+    { id: 's2', titel: '', darstellung: 'unsinn' },
+  ],
+  setlists: [
+    {
+      id: 'l1', name: 'Auftritt', datum: '2026-11-20', ort: '[Ort]',
+      eintraege: [{ typ: 'set', titel: 'Set 1' }, { typ: 'song', eingabe: 'erster', info: '', songId: 's1' }, { typ: 'song', eingabe: 'weg', songId: 'gibtsnicht' }, { typ: 'notiz', text: 'Pause' }, { typ: 'kaputt' }],
+      wahl: { erster: 's1', alt: 'gibtsnicht' },
+    },
+  ],
+};
+
+test('Import: gültige Datei wird bereinigt (Felder, Darstellung, verwaiste Verweise)', () => {
+  const d = pruefeImport(JSON.stringify(EXPORT));
+  gleich(d.songs[0], { id: 's1', titel: 'Erster Song', darstellung: 'akkorde', kurzinfo: 'Capo 2', inhalt: '[Am]‹Zeile›', geaendert: '2026-11-12T10:00:00.000Z' });
+  gleich([d.songs[1].titel, d.songs[1].darstellung], ['Ohne Titel', 'text']);
+  gleich(d.setlists[0].eintraege, [
+    { typ: 'set', titel: 'Set 1' },
+    { typ: 'song', eingabe: 'erster', info: '', songId: 's1' },
+    { typ: 'song', eingabe: 'weg', info: '', songId: null },
+    { typ: 'notiz', text: 'Pause' },
+  ]);
+  gleich(d.setlists[0].wahl, { erster: 's1' });
+});
+
+test('Import: falsche Dateien werden mit verständlicher Meldung abgelehnt', () => {
+  const fehler = (text) => {
+    try {
+      pruefeImport(text);
+      return 'kein Fehler';
+    } catch (e) {
+      return e.message;
+    }
+  };
+  gleich(fehler('kein json').includes('kein JSON'), true);
+  gleich(fehler('{"format":"anderes"}').includes('nicht aus dem Setlist-Tool'), true);
+  gleich(fehler(JSON.stringify({ ...EXPORT, version: 99 })).includes('neueren Version'), true);
+  gleich(fehler(JSON.stringify({ ...EXPORT, songs: [{ titel: 'ohne id' }] })).includes('Kennung'), true);
+});
+
+test('Export: Dateiname endet auf .setlist.json', () => {
+  gleich(dateiname(new Date(2026, 10, 13, 9, 5)), 'setlist-tool-2026-11-13-0905.setlist.json');
+});
+
+// ---- Offline: alle benötigten Dateien stehen in der Liste des Service Workers ----
+test('Offline: Service Worker kennt alle Dateien der App', async () => {
+  const swText = await (await fetch('../sw.js', { cache: 'no-store' })).text();
+  const liste = new Set([...swText.match(/const DATEIEN = \[([\s\S]*?)\];/)[1].matchAll(/'\.\/([^']*)'/g)].map((m) => m[1]));
+  const fehlt = new Set();
+  const gesehen = new Set();
+  const lade = async (pfad) => (await fetch('../' + pfad, { cache: 'no-store' })).text();
+
+  // JavaScript: allen Importen ab js/app.js folgen
+  const offen = ['js/app.js'];
+  while (offen.length) {
+    const pfad = offen.pop();
+    if (gesehen.has(pfad)) continue;
+    gesehen.add(pfad);
+    if (!liste.has(pfad)) fehlt.add(pfad);
+    const text = await lade(pfad);
+    for (const m of text.matchAll(/(?:from|import)\s*\(?\s*'(\.{1,2}\/[^']+)'/g)) {
+      const ziel = new URL(m[1], 'https://x/' + pfad).pathname.slice(1);
+      offen.push(ziel);
+    }
+  }
+  // CSS-Schriften, index.html, Manifest
+  for (const m of (await lade('css/app.css')).matchAll(/url\('\.\.\/([^']+)'\)/g)) if (!liste.has(m[1])) fehlt.add(m[1]);
+  for (const m of (await lade('index.html')).matchAll(/(?:href|src)="([^"#:]+)"/g)) if (!liste.has(m[1])) fehlt.add(m[1]);
+  for (const i of JSON.parse(await lade('manifest.webmanifest')).icons) if (!liste.has(i.src)) fehlt.add(i.src);
+  gleich([...fehlt], [], 'fehlt in sw.js DATEIEN');
+
+  // umgekehrt: jede gelistete Datei existiert
+  const kaputt = [];
+  for (const p of liste) if (!(await fetch('../' + p, { cache: 'no-store' })).ok) kaputt.push(p);
+  gleich(kaputt, [], 'in sw.js gelistet, aber nicht vorhanden');
 });

@@ -5,6 +5,7 @@
 //   #/editor[/<id>]        Setlist-Editor (Laptop)
 //   #/songs[/<id>]         Song-Bestand (Laptop)
 //   #/import               Word-Import (Laptop)
+//   #/sichern              Sichern & Übertragen (Export/Import, Offline)
 //   #/einstellungen        Schriftgrößen usw.
 import { ladeEinstellungen } from './einstellungen.js';
 import { zeigeStart } from './views/start.js';
@@ -13,6 +14,8 @@ import { zeigeSongseite } from './views/songseite.js';
 import { zeigeEditor } from './views/editor.js';
 import { zeigeSongs } from './views/songs.js';
 import { zeigeImport } from './views/import.js';
+import { zeigeSichern } from './views/sichern.js';
+import { starteOffline } from './offline.js';
 import { zeigeEinstellungen } from './views/einstellungen.js';
 import { wachHalten } from './wachhalten.js';
 
@@ -48,6 +51,10 @@ async function navigiere() {
       document.body.className = 'pflege';
       wachHalten(false);
       aufraeumen = await zeigeImport(app);
+    } else if (bereich === 'sichern') {
+      document.body.className = 'pflege';
+      wachHalten(false);
+      aufraeumen = await zeigeSichern(app);
     } else if (bereich === 'einstellungen') {
       document.body.className = 'buehne';
       wachHalten(false);
@@ -70,3 +77,4 @@ async function navigiere() {
 await ladeEinstellungen();
 window.addEventListener('hashchange', navigiere);
 navigiere();
+starteOffline();

@@ -67,6 +67,23 @@ export async function speichereSetlist(setlist) {
   return setlist;
 }
 
+/** Ersetzt Songs und Setlists vollständig – in EINER Transaktion, also ganz oder gar nicht. */
+export async function ersetzeAlles(songs, setlists) {
+  const db = await oeffne();
+  await new Promise((resolve, reject) => {
+    const tx = db.transaction(['songs', 'setlists'], 'readwrite');
+    const s = tx.objectStore('songs');
+    const l = tx.objectStore('setlists');
+    s.clear();
+    l.clear();
+    for (const song of songs) s.put(song);
+    for (const setlist of setlists) l.put(setlist);
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error || new Error('Import abgebrochen'));
+  });
+}
+
 export async function gespielt(setlistId) {
   const eintrag = await hole('gespielt', setlistId);
   return new Set(eintrag?.ids ?? []);
