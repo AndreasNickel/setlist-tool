@@ -3,6 +3,10 @@ import { parseSetlistText, entriesToText } from '../js/setlist-syntax.js';
 import { normalisiere, sucheSong, abstand } from '../js/titelsuche.js';
 import { parseSong, zerlegeZeile, ohneAkkorde, schalteMarkierung } from '../js/songformat.js';
 import { istAkkord, wandleAkkordzeilen } from '../js/akkordzeilen.js';
+import { leseZip, zipText } from '../js/zip.js';
+import { leseDocx } from '../js/docx.js';
+import { wandleWordDokument } from '../js/word-import.js';
+import { zip, baueDocx } from './docx-bauer.js';
 import { loeseAuf, speicherform, editorText, uebersichtZeilen } from '../js/setlist-modell.js';
 
 export const tests = [];
@@ -186,4 +190,115 @@ test('Markieren: Auswahl über mehrere Zeilen, Leerzeilen und Abschnittsnamen bl
   const t = 'Refrain:\nZeile A\n\n> Zeile B';
   gleich(schalteMarkierung(t, 0, t.length).text, 'Refrain:\n> Zeile A\n\n> Zeile B');
   gleich(schalteMarkierung('> A\n> B', 0, 7).text, 'A\nB');
+});
+
+// ---- Word-Import ----
+const mono = (lauf, text) => text.length * 10; // jede Schrift gleich breit: 10 px pro Zeichen
+const C = 'Courier New';
+const p = (...laeufe) => laeufe;
+const t = (text, extra = {}) => ({ text, schrift: C, ...extra });
+
+test('ZIP: gespeicherte und gepackte Einträge lesen', async () => {
+  for (const packen of [false, true]) {
+    const puffer = await zip({ 'a.txt': 'Hallo', 'ordner/b.txt': 'Welt äöü' }, { packen });
+    const d = leseZip(puffer);
+    gleich([await zipText(d, 'a.txt'), await zipText(d, 'ordner/b.txt'), await zipText(d, 'fehlt')], ['Hallo', 'Welt äöü', null]);
+  }
+});
+
+test('DOCX: Schriften aus Standard und Lauf, Größe, Textmarker, Farbe, Umbruch', async () => {
+  const puffer = await baueDocx(
+    [p({ text: 'Titel' }), p(t('Am', { pt: 12 }), { br: true }, { text: 'Zeile', marker: 'yellow', farbe: 'FF0000' })],
+    { schrift: 'Times New Roman', pt: 18 }
+  );
+  const doc = await leseDocx(puffer);
+  gleich(doc.absaetze.length, 2);
+  gleich(doc.absaetze[0].zeilen[0][0].schrift, 'Times New Roman');
+  gleich(doc.absaetze[0].zeilen[0][0].pt, 18);
+  const [z1, z2] = doc.absaetze[1].zeilen;
+  gleich([z1[0].text, z1[0].schrift, z1[0].pt], ['Am', 'Courier New', 12]);
+  gleich([z2[0].text, z2[0].marker, z2[0].farbe], ['Zeile', 'yellow', '#ff0000']);
+});
+
+test('DOCX: keine ZIP-Datei → verständlicher Fehler', async () => {
+  let meldung = '';
+  try {
+    await leseDocx(new TextEncoder().encode('kein zip').buffer);
+  } catch (e) {
+    meldung = e.message;
+  }
+  gleich(meldung.includes('.docx'), true);
+});
+
+const DOKUMENT = {
+  tabPt: 36,
+  absaetze: [
+    { zeilen: [[t('‹Testtitel›')]] },
+    { zeilen: [[]] },
+    { zeilen: [[t('Strophe 1:')]] },
+    { zeilen: [[t('Am         F')]] }, // eigener Absatz
+    { zeilen: [[t('Zeile eins des Textes')]] },
+    { zeilen: [[t('C     G')], [t('Zeile zwei')]] }, // manueller Zeilenumbruch
+    { zeilen: [[]] },
+    { zeilen: [[]] },
+    { zeilen: [[t('Refrain:')]] },
+    { zeilen: [[t('D', { farbe: '#ff0000' })]] }, // farbige Akkordzeile markiert NICHT
+    { zeilen: [[t('Zeile ohne Marker')]] },
+    { zeilen: [[t('Markierte Zeile', { marker: 'yellow' })]] },
+    { zeilen: [[t('Am  F  Zeile drei')]] }, // Akkorde und Text im selben Absatz
+    { zeilen: [[]] },
+    { zeilen: [[t('G   D')]] }, // nur Akkorde
+  ],
+};
+
+test('Word-Import: Titel, Abschnitte, Akkordzeilen (Absatz und Umbruch), Markierung, Hinweis', () => {
+  const r = wandleWordDokument(DOKUMENT, mono);
+  gleich(r.titel, '‹Testtitel›');
+  gleich(
+    r.inhalt.split('\n'),
+    [
+      'Strophe 1:',
+      '[Am]Zeile eins [F]des Textes',
+      '[C]Zeile [G]zwei',
+      '',
+      'Refrain:',
+      '[D]Zeile ohne Marker',
+      '> Markierte Zeile',
+      '[Am]Zeil[F]e drei',
+      '',
+      '[G] [D]',
+    ]
+  );
+  gleich([r.darstellung, r.akkordzeilen, r.markiert], ['akkorde', 5, 1]);
+  gleich(r.hinweise, [{ zeile: 8, text: 'Akkorde und Text standen im selben Absatz – Zuordnung prüfen.' }]);
+});
+
+test('Word-Import: Proportionalschrift über Zeichenbreiten', () => {
+  // schmale Zeichen i, l und Leerzeichen 4 px, alle anderen 10 px
+  const prop = (lauf, text) => [...text].reduce((s, z) => s + ('il '.includes(z) ? 4 : 10), 0);
+  const T = (text) => ({ text, schrift: 'Times New Roman' });
+  const doc = { absaetze: [{ zeilen: [[T('Titel')]] }, { zeilen: [[T('Am      F')]] }, { zeilen: [[T('Will ich')]] }] };
+  // F liegt bei 20 + 6·4 = 44 px; „Will ic|h“ beginnt bei 40 px → vor dem h
+  gleich(wandleWordDokument(doc, prop).inhalt, '[Am]Will ic[F]h');
+  // dieselbe Zeile in gleich breiter Schrift ergäbe eine andere Stelle
+  gleich(wandleWordDokument(doc, mono).inhalt, '[Am]Will ich[F]');
+});
+
+test('Word-Import: Tabulatoren, Akkord hinter dem Zeilenende, „Am“ als Wort', () => {
+  const doc = {
+    tabPt: 30, // 40 px
+    absaetze: [
+      { zeilen: [[t('Titel')]] },
+      { zeilen: [[t('\tG'), t('        C')]] }, // G bei 40 px, C bei 40+10+80 = 130 px
+      { zeilen: [[t('Kurze Zeile')]] }, // 110 px lang → C dahinter
+      { zeilen: [[t('Am Abend ohne Akkorde')]] }, // ein Akkordwort am Anfang ist noch keine Akkordzeile
+    ],
+  };
+  gleich(wandleWordDokument(doc, mono).inhalt.split('\n'), ['Kurz[G]e Zeile  [C]', 'Am Abend ohne Akkorde']);
+});
+
+test('Word-Import: ohne Akkorde → Darstellung Text, leere Absätze zusammengefasst', () => {
+  const doc = { absaetze: [{ zeilen: [[]] }, { zeilen: [[t('Titel')]] }, { zeilen: [[]] }, { zeilen: [[t('A eins')]] }, { zeilen: [[]] }, { zeilen: [[]] }, { zeilen: [[t('B zwei')]] }, { zeilen: [[]] }] };
+  const r = wandleWordDokument(doc, mono);
+  gleich([r.titel, r.inhalt, r.darstellung], ['Titel', 'A eins\n\nB zwei', 'text']);
 });

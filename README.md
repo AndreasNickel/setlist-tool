@@ -22,6 +22,7 @@ und im Browser öffnen:
 - `http://localhost:8000/` – Bühne (Setlist wählen, Übersicht, Songseiten)
 - `http://localhost:8000/#/editor` – Setlists bearbeiten (Laptop)
 - `http://localhost:8000/#/songs` – Song-Bestand (Laptop)
+- `http://localhost:8000/#/import` – Word-Import (Laptop)
 - `http://localhost:8000/tests/` – Tests der Logik
 
 Zum Ausprobieren gibt es auf der leeren Startseite „Beispieldaten laden“ (nur Platzhaltertexte).
@@ -35,7 +36,11 @@ Testen am Laptop mit iPad-Fenstergröße 834 × 1194 (Entwicklerwerkzeuge → Ge
   (`Refrain:`) und Markierungen (`> `, Knopf „Markieren“ bzw. Strg+M), Umwandlung
   „Akkordzeile über Textzeile“ beim Einfügen, Vorschau der Songseite.
 
-Word-Import (Stufe 3) und Offline/Export (Stufe 4) folgen.
+- **Stufe 3:** Word-Import (.docx, direkt im Browser, ohne Upload): Titel, Abschnitte,
+  Akkordzeilen über Text (Position über die Zeichenbreiten der Originalschrift, auch bei
+  Proportionalschrift), Textmarker/Schriftfarbe als Markierung; Prüfansicht Original | Ergebnis | Vorschau.
+
+Offline/Export (Stufe 4) folgt.
 
 Veröffentlicht: https://andreasnickel.github.io/setlist-tool/
 

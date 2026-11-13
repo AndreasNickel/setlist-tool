@@ -349,3 +349,40 @@ p.es-hinweis { margin: 24px 0 0; }
 .so-verwendung a { color: var(--p-blau); }
 .so-passung { min-height: 2.6em; }
 .ed-ipad-bild .sp-kopf { padding-top: 16px; }
+
+/* ---------- Word-Import (Laptop) ---------- */
+.so-import { text-align: center; }
+.wi-start { max-width: 820px; gap: 16px; font-size: 16px; }
+.wi-titel { font-size: 24px; }
+.wi-start p { margin: 0; }
+.wi-datei { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.wi-zone {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  min-height: 200px; padding: 24px; border: 2px dashed var(--p-linie); border-radius: 14px;
+  background: #fff; cursor: pointer; text-align: center; color: var(--p-leise);
+}
+.wi-zone strong { font-size: 20px; color: var(--p-text); }
+.wi-zone.ueber, .wi-zone:hover { border-color: var(--p-blau); background: #f3f7fc; }
+.wi-datei:focus-visible + .wi-zone { outline: 3px solid var(--p-blau); outline-offset: 2px; }
+.wi-fehler { color: #9b1c1c; }
+.wi-fehler:empty { display: none; }
+.wi-regeln { background: #fff; border: 1px solid var(--p-linie-fein); border-radius: 10px; padding: 12px 16px; }
+.wi-regeln summary { cursor: pointer; font-weight: 700; }
+.wi-regeln ol { margin: 10px 0; padding-left: 22px; line-height: 1.5; }
+.wi-erledigt h2 { margin-bottom: 6px; }
+.wi-erledigt ul { margin: 0; padding-left: 20px; }
+.wi-erledigt a { color: var(--p-blau); }
+
+.wi-original { width: 440px; flex-shrink: 0; border-right: 1px solid var(--p-linie-fein); padding: 18px 16px; display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.wi-seite { flex-grow: 1; overflow: auto; background: #fff; border: 1px solid var(--p-linie); border-radius: 6px; padding: 18px 20px; color: #000; }
+.wi-zeile { white-space: pre; line-height: 1.2; min-height: 1em; }
+.wi-leiste { display: flex; align-items: center; gap: 12px; font-size: 15px; }
+.wi-datei-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wi-leiste button { white-space: nowrap; flex-shrink: 0; }
+.wi-leiste .knopf { min-height: 40px; font-size: 16px; padding: 0 18px; background: var(--p-blau); color: #fff; }
+.wi-mitte { gap: 10px; }
+.wi-konflikt { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; color: var(--p-warn); }
+.wi-konflikt:empty { display: none; }
+.wi-konflikt label { color: var(--p-text); cursor: pointer; }
+.wi-zusammenfassung { font-size: 14px; color: var(--p-leise); }
+.wi-hinweise { margin: 0; padding: 0; list-style: none; font-size: 14px; color: var(--p-warn); display: flex; flex-direction: column; gap: 4px; max-height: 120px; overflow-y: auto; }
