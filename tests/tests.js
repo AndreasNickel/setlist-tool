@@ -1,7 +1,8 @@
 // Tests der reinen Logik. Nur Platzhaltertexte – keine echten Songdaten!
 import { parseSetlistText, entriesToText } from '../js/setlist-syntax.js';
 import { normalisiere, sucheSong, abstand } from '../js/titelsuche.js';
-import { parseSong, zerlegeZeile, ohneAkkorde } from '../js/songformat.js';
+import { parseSong, zerlegeZeile, ohneAkkorde, schalteMarkierung } from '../js/songformat.js';
+import { istAkkord, wandleAkkordzeilen } from '../js/akkordzeilen.js';
 import { loeseAuf, speicherform, editorText, uebersichtZeilen } from '../js/setlist-modell.js';
 
 export const tests = [];
@@ -145,4 +146,44 @@ test('Songformat: Abschnitte, Namen, Markierungen', () => {
 test('Songformat: Zeile mit Akkord und Doppelpunkt ist kein Abschnittsname', () => {
   const s = parseSong('[Am]Er sagte:');
   gleich([s[0].name, s[0].zeilen.length], ['', 1]);
+});
+
+// ---- Akkordzeilen ----
+test('Akkordzeilen: Akkord-Erkennung', () => {
+  const ja = ['A', 'Am', 'C#m7', 'Bb', 'Hmaj7', 'Dsus4', 'Cadd9', 'G/H', 'F#m7b5', 'E7', 'Gdim', 'Caug', 'D/F#'];
+  const nein = ['Am,', 'Abend', 'a', 'X', 'Ich', 'Der', 'Echo'];
+  gleich(ja.filter((w) => !istAkkord(w)), []);
+  gleich(nein.filter(istAkkord), []);
+});
+
+test('Akkordzeilen: Akkordzeile über Textzeile wird ChordPro', () => {
+  const r = wandleAkkordzeilen('Am          F\nErste Zeile des Textes');
+  gleich(r, { text: '[Am]Erste Zeile [F]des Textes', anzahl: 1 });
+});
+
+test('Akkordzeilen: Akkord hinter dem Zeilenende, reine Akkordzeile, Abschnitt bleibt', () => {
+  const r = wandleAkkordzeilen('Refrain:\nC          G\nKurz\n\nAm  F  C  G\n\nTextzeile ohne Akkorde');
+  gleich(r.text, 'Refrain:\n[C]Kurz       [G]\n\n[Am]  [F]  [C]  [G]\n\nTextzeile ohne Akkorde');
+  gleich(r.anzahl, 2);
+});
+
+test('Akkordzeilen: zwei Akkordzeilen hintereinander, Tabs, ChordPro bleibt', () => {
+  gleich(wandleAkkordzeilen('Am F\nC G\nText').text, '[Am] [F]\n[C]Te[G]xt');
+  gleich(wandleAkkordzeilen('\tG\nZeile mit Tab davor').text, 'Zeile mi[G]t Tab davor');
+  gleich(wandleAkkordzeilen('[Am]Schon [F]ChordPro').anzahl, 0);
+});
+
+// ---- Markieren ----
+test('Markieren: einzelne Zeile an/aus', () => {
+  const t = 'Zeile A\nZeile B\nZeile C';
+  const an = schalteMarkierung(t, 9, 9);
+  gleich(an.text, 'Zeile A\n> Zeile B\nZeile C');
+  gleich([an.start, an.ende], [8, 17]);
+  gleich(schalteMarkierung(an.text, an.start, an.ende).text, t);
+});
+
+test('Markieren: Auswahl über mehrere Zeilen, Leerzeilen und Abschnittsnamen bleiben', () => {
+  const t = 'Refrain:\nZeile A\n\n> Zeile B';
+  gleich(schalteMarkierung(t, 0, t.length).text, 'Refrain:\n> Zeile A\n\n> Zeile B');
+  gleich(schalteMarkierung('> A\n> B', 0, 7).text, 'A\nB');
 });

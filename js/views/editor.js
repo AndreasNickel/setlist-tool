@@ -7,6 +7,7 @@ import { normalisiere } from '../titelsuche.js';
 import { setlistListe } from './liste.js';
 import { datumText } from './start.js';
 import { ladeBeispieldaten } from '../beispieldaten.js';
+import { pflegeKopf } from './pflege-kopf.js';
 
 const DARSTELLUNG = { titel: 'nur Titel', text: 'Text', akkorde: 'Akkorde' };
 const heute = () => new Date().toISOString().slice(0, 10);
@@ -25,20 +26,7 @@ export async function zeigeEditor(app, setlistId) {
   }
 
   // ---- Kopfleiste ----
-  const kopf = h(
-    'header.ed-kopf',
-    h('span.ed-marke', 'Setlist-Tool'),
-    h(
-      'nav.ed-nav',
-      { 'aria-label': 'Bereiche' },
-      h('a.aktiv', { href: '#/editor', 'aria-current': 'page' }, 'Setlists'),
-      h('span.ed-nav-spaeter', { title: 'kommt in Stufe 2' }, 'Song-Bestand'),
-      h('span.ed-nav-spaeter', { title: 'kommt in Stufe 4' }, 'Sichern & Übertragen')
-    ),
-    h('span.ed-luecke'),
-    setlist ? h('a.knopf-hell', { href: '#/buehne/' + encodeURIComponent(setlist.id) }, 'Auf der Bühne öffnen') : null,
-    h('a.ed-kopf-link', { href: '#/einstellungen' }, 'Einstellungen')
-  );
+  const kopf = pflegeKopf('setlists', setlist ? h('a.knopf-hell', { href: '#/buehne/' + encodeURIComponent(setlist.id) }, 'Auf der Bühne öffnen') : null);
 
   // ---- Linke Spalte: Auftritte ----
   const neu = async () => {
@@ -215,7 +203,8 @@ export async function zeigeEditor(app, setlistId) {
     if (e.status === 'treffer') {
       const s = e.kandidaten[0];
       const gleich = normalisiere(s.titel) === normalisiere(e.eingabe);
-      return ['ok', [gleich ? '' : `→ ${s.titel} · `, DARSTELLUNG[darstellungVon(s)]]];
+      const link = h('a.ed-songlink', { href: '#/songs/' + encodeURIComponent(s.id), title: 'Song im Bestand bearbeiten' }, DARSTELLUNG[darstellungVon(s)]);
+      return ['ok', [gleich ? '' : `→ ${s.titel} · `, link]];
     }
     if (e.status === 'mehrdeutig') {
       const auswahl = h(
