@@ -4,6 +4,7 @@
 //   #/buehne/<id>/<nr>     Songseite (nr = Eintragsnummer in der Setlist)
 //   #/editor[/<id>]        Setlist-Editor (Laptop)
 //   #/songs[/<id>]         Song-Bestand (Laptop)
+//   #/import               Word-Import (Laptop)
 //   #/einstellungen        Schriftgrößen usw.
 import { ladeEinstellungen } from './einstellungen.js';
 import { zeigeStart } from './views/start.js';
@@ -11,6 +12,7 @@ import { zeigeUebersicht } from './views/uebersicht.js';
 import { zeigeSongseite } from './views/songseite.js';
 import { zeigeEditor } from './views/editor.js';
 import { zeigeSongs } from './views/songs.js';
+import { zeigeImport } from './views/import.js';
 import { zeigeEinstellungen } from './views/einstellungen.js';
 import { wachHalten } from './wachhalten.js';
 
@@ -42,6 +44,10 @@ async function navigiere() {
       document.body.className = 'pflege';
       wachHalten(false);
       aufraeumen = await zeigeSongs(app, a);
+    } else if (bereich === 'import') {
+      document.body.className = 'pflege';
+      wachHalten(false);
+      aufraeumen = await zeigeImport(app);
     } else if (bereich === 'einstellungen') {
       document.body.className = 'buehne';
       wachHalten(false);

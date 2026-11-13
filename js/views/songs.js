@@ -4,11 +4,10 @@ import { h } from '../dom.js';
 import { alleSetlists, alleSongs, hole, loesche, neueId, speichereSetlist, speichereSong } from '../db.js';
 import { darstellungVon } from '../setlist-modell.js';
 import { normalisiere } from '../titelsuche.js';
-import { schalteMarkierung } from '../songformat.js';
 import { wandleAkkordzeilen } from '../akkordzeilen.js';
-import { ladeEinstellungen } from '../einstellungen.js';
-import { songInhalt, passeEin } from './songseite.js';
+import { songVorschau } from './song-vorschau.js';
 import { pflegeKopf } from './pflege-kopf.js';
+import { ersetze, markiereAuswahl, strgM } from './text-werkzeuge.js';
 
 const DARSTELLUNG = { titel: 'nur Titel', text: 'Text', akkorde: 'Akkorde' };
 const FILTER_SCHLUESSEL = 'songs:filter';
@@ -82,6 +81,7 @@ export async function zeigeSongs(app, songId) {
   const seitenleiste = h(
     'aside.ed-links.so-links',
     h('div.ed-links-kopf', h('h2', 'Song-Bestand'), h('button.knopf-klein', { type: 'button', onclick: neu }, '+ Neuer Song')),
+    h('a.knopf-klein.so-import', { href: '#/import' }, 'Word-Dateien importieren'),
     suche,
     filterWahl,
     anzahl,
@@ -97,7 +97,12 @@ export async function zeigeSongs(app, songId) {
         h(
           'div.ed-rumpf',
           seitenleiste,
-          h('section.ed-mitte.ed-leer', h('p', 'Noch keine Songs im Bestand.'), h('button.knopf', { type: 'button', onclick: neu }, '+ Neuer Song'))
+          h(
+            'section.ed-mitte.ed-leer',
+            h('p', 'Noch keine Songs im Bestand.'),
+            h('button.knopf', { type: 'button', onclick: neu }, '+ Neuer Song'),
+            h('a.knopf-klein', { href: '#/import' }, 'Word-Dateien importieren')
+          )
         )
       )
     );
@@ -123,13 +128,7 @@ export async function zeigeSongs(app, songId) {
   const darstellungHinweis = h('p.so-darstellung-hinweis');
 
   const markieren = () => {
-    const vorher = textfeld.value;
-    const r = schalteMarkierung(vorher, textfeld.selectionStart, textfeld.selectionEnd);
-    if (r.text === vorher) return;
-    const altesEnde = r.ende - (r.text.length - vorher.length);
-    ersetze(textfeld, r.start, altesEnde, r.text.slice(r.start, r.ende));
-    textfeld.setSelectionRange(r.start, r.ende);
-    geaendert();
+    if (markiereAuswahl(textfeld)) geaendert();
   };
   const umwandeln = () => {
     const r = wandleAkkordzeilen(textfeld.value);
@@ -155,12 +154,7 @@ export async function zeigeSongs(app, songId) {
     geaendert();
     zeigeMeldung(`Beim Einfügen ${r.anzahl} Akkordzeile${r.anzahl === 1 ? '' : 'n'} in ChordPro umgewandelt.`);
   });
-  textfeld.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'm') {
-      e.preventDefault();
-      markieren();
-    }
-  });
+  strgM(textfeld, markieren);
 
   const werkzeuge = h(
     'div.so-werkzeuge',
@@ -227,44 +221,8 @@ export async function zeigeSongs(app, songId) {
   const speicherStand = mitte.querySelector('.ed-speicherstand');
 
   // ---- Rechts: Vorschau der Songseite ----
-  const einst = await ladeEinstellungen();
-  const vTitel = h('span.sp-titel');
-  const vInfo = h('span.sp-info');
-  const vInhalt = h('div.sp-inhalt');
-  const vorschau = h(
-    'aside.ed-rechts',
-    h('h2', 'Vorschau iPad'),
-    h(
-      'div.ed-ipad',
-      h(
-        'div.ed-ipad-bild',
-        h('div.sp', h('div.sp-kopf', h('span.sp-kopf-text', vTitel, vInfo), h('span.sp-position', '1 / 1')), vInhalt, h('footer.sp-fuss', h('span'), h('span.sp-fuss-label', 'Vorschau')))
-      )
-    ),
-    h('p.ed-klein.so-passung')
-  );
-  const passung = vorschau.querySelector('.so-passung');
-
-  const zeichneVorschau = () => {
-    const d = darstellungVon({ inhalt: textfeld.value, darstellung: wert() });
-    vTitel.textContent = titel.value || 'Ohne Titel';
-    vInfo.textContent = kurzinfo.value;
-    vInfo.hidden = !kurzinfo.value;
-    vInhalt.className = 'sp-inhalt' + (d === 'akkorde' ? ' mit-akkorden' : '');
-    if (d === 'titel') {
-      vInhalt.classList.add('nur-titel');
-      vInhalt.replaceChildren(h('p.sp-nur-titel', titel.value || 'Ohne Titel'));
-      vInhalt.style.removeProperty('--text-groesse');
-      passung.textContent = 'In der Übersicht nicht zu öffnen; erscheint nur beim Wischen als Titelseite.';
-      return;
-    }
-    vInhalt.replaceChildren(songInhalt(textfeld.value, d === 'akkorde'));
-    const groesse = d === 'akkorde' ? einst.akkordTextGroesse : einst.textGroesse;
-    const r = passeEin(vInhalt, groesse, Math.min(einst.mindestGroesse, groesse));
-    passung.textContent = r.scrollen
-      ? `Passt nicht auf eine Seite – wird auf der Bühne gescrollt (${r.px} px).`
-      : `Passt auf eine Seite: ${r.px} px${r.px < groesse ? ` (verkleinert von ${groesse} px)` : ''}${r.spalten === 2 ? ', zweispaltig' : ''}.`;
-  };
+  const { element: vorschau, zeichne } = await songVorschau();
+  const zeichneVorschau = () => zeichne({ titel: titel.value, kurzinfo: kurzinfo.value, darstellung: wert(), inhalt: textfeld.value });
 
   const zeigeHinweise = () => {
     const d = wert();
@@ -324,12 +282,4 @@ export async function zeigeSongs(app, songId) {
   return () => {
     if (timer) speichere();
   };
-}
-
-/** Ersetzt einen Textbereich so, dass Strg+Z im Browser weiter funktioniert. */
-function ersetze(feld, von, bis, text) {
-  feld.focus();
-  feld.setSelectionRange(von, bis);
-  const ok = document.execCommand && document.execCommand('insertText', false, text);
-  if (!ok || feld.value.slice(von, von + text.length) !== text) feld.setRangeText(text, von, bis, 'end');
 }
