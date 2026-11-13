@@ -23,8 +23,13 @@ export function exportDatei(daten) {
 /** Speichert die Datei per Download (Laptop) oder über „Teilen“ (iPad: „In Dateien sichern“). */
 export async function gibDateiAus(datei, { teilen = false } = {}) {
   if (teilen && navigator.canShare?.({ files: [datei] })) {
-    await navigator.share({ files: [datei], title: datei.name });
-    return 'geteilt';
+    try {
+      await navigator.share({ files: [datei], title: datei.name });
+      return 'geteilt';
+    } catch (e) {
+      // „Teilen“ nicht erlaubt (z. B. Tipp zu lange her) → stattdessen als Download speichern
+      if (e?.name !== 'NotAllowedError') throw e;
+    }
   }
   const link = document.createElement('a');
   link.href = URL.createObjectURL(datei);
@@ -34,6 +39,27 @@ export async function gibDateiAus(datei, { teilen = false } = {}) {
   link.remove();
   setTimeout(() => URL.revokeObjectURL(link.href), 10000);
   return 'heruntergeladen';
+}
+
+/** iPad (meldet sich als Mac mit Touch) bzw. iPhone – dort wird über „Teilen“ gesichert. */
+export const istIpad = () => /iPad|iPhone|Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1;
+
+/**
+ * Export mit einem Tipp – am iPad über „Teilen“ (In Dateien sichern, AirDrop), sonst als Download.
+ * Liefert eine kurze Meldung; ein abgebrochenes Teilen ergibt ''.
+ */
+export async function exportiereJetzt() {
+  const daten = await erstelleExport();
+  const datei = exportDatei(daten);
+  const teilen = istIpad() && !!navigator.canShare?.({ files: [datei] });
+  try {
+    const art = await gibDateiAus(datei, { teilen });
+    await merkeAustausch({ letzterExport: daten.exportiert });
+    return art === 'geteilt' ? 'Datei übergeben.' : `Datei „${datei.name}“ gespeichert.`;
+  } catch (e) {
+    if (e?.name === 'AbortError') return '';
+    throw e;
+  }
 }
 
 const str = (v) => (typeof v === 'string' ? v : '');
@@ -85,6 +111,21 @@ export function pruefeImport(text) {
 export async function letzteAenderung() {
   const [songs, setlists] = await Promise.all([alleSongs(), alleSetlists()]);
   return [...songs, ...setlists].map((x) => x.geaendert || '').sort().pop() || '';
+}
+
+/**
+ * Setlists auf dem Gerät, die neuer sind als in der Datei (Feld `geaendert`) – sie gingen beim Import verloren.
+ * Fehlt eine Setlist in der Datei, zählt sie, wenn sie nach dem Export der Datei geändert wurde.
+ */
+export function neuereSetlists(lokal, daten) {
+  const inDatei = new Map(daten.setlists.map((l) => [l.id, l]));
+  return lokal
+    .filter((l) => {
+      if (!l.geaendert) return false;
+      const d = inDatei.get(l.id);
+      return d ? l.geaendert > (d.geaendert || '') : l.geaendert > (daten.exportiert || '');
+    })
+    .map((l) => ({ id: l.id, name: l.name || 'Setlist', geaendert: l.geaendert, inDatei: inDatei.has(l.id) }));
 }
 
 export async function fuehreImportAus(daten, dateiName = '') {

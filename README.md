@@ -44,6 +44,11 @@ Testen am Laptop mit iPad-Fenstergröße 834 × 1194 (Entwicklerwerkzeuge → Ge
   „Teilen / In Dateien sichern“), Import mit Prüfung und Warnung bei neueren Daten auf dem Gerät,
   Offline-Betrieb per Service Worker, Installation als App auf dem Home-Bildschirm.
 
+- **Kurzfristige Änderungen am iPad:** In der Bühnen-Übersicht „Reihenfolge ändern“: Einträge
+  ziehen oder mit ▲/▼ verschieben, mit ✕ entfernen (Rückgängig), Songs aus dem Bestand einfügen;
+  danach exportieren, damit die Änderung auf den Laptop kommt. Der Setlist-Editor passt sich der
+  Fensterbreite an (Vorschau einklappbar) und bietet „Titel im Bestand übernehmen“ an.
+
 ## iPad einrichten
 
 1. https://andreasnickel.github.io/setlist-tool/ in Safari öffnen.

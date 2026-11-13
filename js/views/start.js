@@ -3,6 +3,7 @@ import { h, icon } from '../dom.js';
 import { alleSetlists, alleSongs } from '../db.js';
 import { ladeBeispieldaten } from '../beispieldaten.js';
 import { beobachte } from '../offline.js';
+import { exportiereJetzt } from '../austausch.js';
 
 export async function zeigeStart(app) {
   const [setlists, songs] = await Promise.all([alleSetlists(), alleSongs()]);
@@ -40,6 +41,20 @@ export async function zeigeStart(app) {
       );
 
   const hinweis = h('p.start-hinweis', { role: 'status' });
+  // Export mit einem Tipp (am iPad: „Teilen“ → In Dateien sichern), z. B. nach Änderungen auf der Bühne
+  const exportKnopf = () => {
+    const knopf = h('button.start-export', { type: 'button' }, 'Exportieren');
+    knopf.addEventListener('click', async () => {
+      knopf.disabled = true;
+      try {
+        hinweis.textContent = await exportiereJetzt();
+      } catch (e) {
+        hinweis.textContent = 'Export fehlgeschlagen: ' + (e?.message || e);
+      }
+      knopf.disabled = false;
+    });
+    return knopf;
+  };
   app.append(
     h(
       'div.start',
@@ -49,6 +64,7 @@ export async function zeigeStart(app) {
       h(
         'footer.start-fuss',
         h('a', { href: '#/editor' }, icon('stift', 20), ' Setlists bearbeiten (Laptop)'),
+        setlists.length ? exportKnopf() : null,
         h('a', { href: '#/sichern' }, 'Sichern & Übertragen')
       )
     )

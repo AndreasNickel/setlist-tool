@@ -1,6 +1,6 @@
 // Kopfleiste der Pflege-Ansichten am Laptop (Setlists · Song-Bestand · Sichern & Übertragen).
 import { h } from '../dom.js';
-import { erstelleExport, exportDatei, gibDateiAus, merkeAustausch } from '../austausch.js';
+import { exportiereJetzt, istIpad } from '../austausch.js';
 
 const BEREICHE = [
   { id: 'setlists', name: 'Setlists', href: '#/editor' },
@@ -10,20 +10,20 @@ const BEREICHE = [
 
 /** @param aktiv  'setlists' | 'songs' | 'sichern'   @param rechts  zusätzliche Elemente */
 export function pflegeKopf(aktiv, ...rechts) {
-  const exportKnopf = h('button.knopf-hell', { type: 'button', title: 'Alle Songs und Setlists als Datei speichern' }, 'Für iPad exportieren');
+  // Am iPad heißt der Knopf schlicht „Exportieren“ und sichert über „Teilen“ (In Dateien sichern)
+  const beschriftung = istIpad() ? 'Exportieren' : 'Für iPad exportieren';
+  const exportKnopf = h('button.knopf-hell', { type: 'button', title: 'Alle Songs und Setlists als Datei speichern' }, beschriftung);
   exportKnopf.addEventListener('click', async () => {
     exportKnopf.disabled = true;
     try {
-      const daten = await erstelleExport();
-      await gibDateiAus(exportDatei(daten));
-      await merkeAustausch({ letzterExport: daten.exportiert });
-      exportKnopf.textContent = 'Exportiert ✓';
+      const meldung = await exportiereJetzt();
+      exportKnopf.textContent = meldung ? 'Exportiert ✓' : beschriftung;
     } catch (e) {
       exportKnopf.textContent = 'Export fehlgeschlagen';
       console.error(e);
     }
     setTimeout(() => {
-      exportKnopf.textContent = 'Für iPad exportieren';
+      exportKnopf.textContent = beschriftung;
       exportKnopf.disabled = false;
     }, 2500);
   });

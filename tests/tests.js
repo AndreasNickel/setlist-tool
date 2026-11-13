@@ -7,8 +7,9 @@ import { leseZip, zipText } from '../js/zip.js';
 import { leseDocx } from '../js/docx.js';
 import { wandleWordDokument } from '../js/word-import.js';
 import { zip, baueDocx } from './docx-bauer.js';
-import { pruefeImport, dateiname } from '../js/austausch.js';
-import { loeseAuf, speicherform, editorText, uebersichtZeilen } from '../js/setlist-modell.js';
+import { pruefeImport, dateiname, neuereSetlists } from '../js/austausch.js';
+import { loeseAuf, speicherform, editorText, uebersichtZeilen, zeileMitTitel } from '../js/setlist-modell.js';
+import { arbeitsliste, verschiebe, fuegeSongEin, eintraegeAus, gespieltNeu, istGeaendert, sucheImBestand } from '../js/setlist-bearbeiten.js';
 import { druckSets, druckDatum } from '../js/views/druck.js';
 
 export const tests = [];
@@ -382,6 +383,66 @@ test('Druck: Datum ausgeschrieben, ungültige Werte unverändert', () => {
   gleich(druckDatum('2026-11-20'), 'Freitag, 20. November 2026');
   gleich(druckDatum(''), '');
   gleich(druckDatum('demnächst'), 'demnächst');
+});
+
+// ---- Kurzfristige Änderungen am iPad ----
+const E = [
+  { typ: 'set', titel: 'Set 1' },
+  { typ: 'song', eingabe: 'A', info: '', songId: 'a' },
+  { typ: 'song', eingabe: 'B', info: '', songId: 'b' },
+  { typ: 'notiz', text: 'Pause' },
+  { typ: 'song', eingabe: 'C', info: 'Capo 2', songId: 'c' },
+];
+const namen = (l) => eintraegeAus(l).map((e) => e.eingabe || e.titel || e.text);
+
+test('Bearbeiten: verschieben, einfügen, Änderung erkennen', () => {
+  let l = arbeitsliste(E);
+  gleich(istGeaendert(l, E), false);
+  l = verschiebe(l, 4, 1);
+  gleich(namen(l), ['Set 1', 'C', 'A', 'B', 'Pause']);
+  gleich(verschiebe(l, 0, -1) === l || namen(verschiebe(l, 0, -1))[0] === 'Set 1', true);
+  const r = fuegeSongEin(l, { id: 'd', titel: 'Neu D' }, 1);
+  gleich(r.pos, 2);
+  gleich(namen(r.liste), ['Set 1', 'C', 'Neu D', 'A', 'B', 'Pause']);
+  gleich(r.liste[2].e, { typ: 'song', eingabe: 'Neu D', info: '', songId: 'd' });
+  gleich(namen(fuegeSongEin(l, { id: 'd', titel: 'Neu D' }, null).liste).pop(), 'Neu D');
+  gleich(istGeaendert(l, E), true);
+});
+
+test('Bearbeiten: „gespielt“ wandert mit den Einträgen', () => {
+  let l = arbeitsliste(E);
+  l = verschiebe(l, 1, 4); // A ans Ende
+  l = fuegeSongEin(l, { id: 'd', titel: 'D' }, -1).liste; // D ganz nach vorn
+  // vorher gespielt: A (1) und C (4)
+  gleich([...gespieltNeu(l, new Set([1, 4]))].sort(), [4, 5]);
+  gleich(namen(l), ['D', 'Set 1', 'B', 'Pause', 'C', 'A']);
+});
+
+test('Bearbeiten: Suche im Bestand – Anfang vor Teiltreffer, sonst tolerant', () => {
+  const songs = [
+    { id: '1', titel: 'Zweiter Morgen' },
+    { id: '2', titel: 'Morgenrot' },
+    { id: '3', titel: 'Abendlied' },
+  ];
+  gleich(sucheImBestand('morgen', songs).map((s) => s.id), ['2', '1']);
+  gleich(sucheImBestand('abendlid', songs).map((s) => s.id), ['3']);
+  gleich(sucheImBestand('  ', songs), []);
+});
+
+test('Editor: Titel im Bestand übernehmen behält die Kurzinfo', () => {
+  gleich(zeileMitTitel('beispielsong eins', 'Beispielsong Eins'), 'Beispielsong Eins');
+  gleich(zeileMitTitel('beispelsong eins |  Capo 2', 'Beispielsong Eins'), 'Beispielsong Eins | Capo 2');
+});
+
+test('Import: neuere Setlists auf dem Gerät werden erkannt und genannt', () => {
+  const datei = { exportiert: '2026-11-13T10:00:00Z', setlists: [{ id: 'l1', geaendert: '2026-11-13T09:00:00Z' }, { id: 'l2', geaendert: '2026-11-13T09:00:00Z' }] };
+  const lokal = [
+    { id: 'l1', name: 'Älter', geaendert: '2026-11-13T08:00:00Z' },
+    { id: 'l2', name: 'Am iPad geändert', geaendert: '2026-11-13T11:00:00Z' },
+    { id: 'l3', name: 'Nur hier, neu', geaendert: '2026-11-13T12:00:00Z' },
+    { id: 'l4', name: 'Nur hier, alt', geaendert: '2026-11-12T12:00:00Z' },
+  ];
+  gleich(neuereSetlists(lokal, datei).map((l) => [l.name, l.inDatei]), [['Am iPad geändert', true], ['Nur hier, neu', false]]);
 });
 
 // ---- Offline: alle benötigten Dateien stehen in der Liste des Service Workers ----

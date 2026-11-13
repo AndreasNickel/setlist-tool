@@ -27,6 +27,7 @@ const DATEIEN = [
   './js/dom.js',
   './js/einstellungen.js',
   './js/offline.js',
+  './js/setlist-bearbeiten.js',
   './js/setlist-modell.js',
   './js/setlist-syntax.js',
   './js/songformat.js',
@@ -46,6 +47,7 @@ const DATEIEN = [
   './js/views/songseite.js',
   './js/views/start.js',
   './js/views/text-werkzeuge.js',
+  './js/views/uebersicht-bearbeiten.js',
   './js/views/uebersicht.js',
 ];
 
