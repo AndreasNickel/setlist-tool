@@ -9,6 +9,7 @@ import { wandleWordDokument } from '../js/word-import.js';
 import { zip, baueDocx } from './docx-bauer.js';
 import { pruefeImport, dateiname } from '../js/austausch.js';
 import { loeseAuf, speicherform, editorText, uebersichtZeilen } from '../js/setlist-modell.js';
+import { druckSets, druckDatum } from '../js/views/druck.js';
 
 export const tests = [];
 const test = (name, fn) => tests.push([name, fn]);
@@ -352,6 +353,35 @@ test('Import: falsche Dateien werden mit verständlicher Meldung abgelehnt', () 
 
 test('Export: Dateiname endet auf .setlist.json', () => {
   gleich(dateiname(new Date(2026, 10, 13, 9, 5)), 'setlist-tool-2026-11-13-0905.setlist.json');
+});
+
+// ---- Druckansicht ----
+test('Druck: Sets mit durchgehender Nummerierung, Einträge vor dem ersten Set ohne Überschrift', () => {
+  const songs = [{ id: 'a', titel: 'Song A', darstellung: 'akkorde', kurzinfo: 'Capo 2', inhalt: '[Am]‹Zeile›' }];
+  const zeilen = uebersichtZeilen(
+    [
+      { typ: 'song', eingabe: 'unbekannt', info: '', songId: null },
+      { typ: 'set', titel: 'Set 1' },
+      { typ: 'song', eingabe: 'song a', info: '', songId: 'a' },
+      { typ: 'notiz', text: 'Pause' },
+      { typ: 'set', titel: 'Leer' },
+      { typ: 'set', titel: 'Set 2' },
+      { typ: 'song', eingabe: 'song a', info: 'Ansage', songId: 'a' },
+    ],
+    songs
+  );
+  const sets = druckSets(zeilen);
+  gleich(sets.map((s) => s.titel), ['', 'Set 1', 'Leer', 'Set 2']);
+  gleich(sets[1].zeilen.map((z) => [z.art, z.nr, z.titel, z.info]), [['song', 2, 'Song A', 'Capo 2'], ['notiz', undefined, 'Pause', undefined]]);
+  gleich(sets[3].zeilen.map((z) => [z.nr, z.info]), [[3, 'Ansage']]);
+  // keine Songinhalte in den Druckzeilen
+  gleich(JSON.stringify(sets).includes('Zeile'), false);
+});
+
+test('Druck: Datum ausgeschrieben, ungültige Werte unverändert', () => {
+  gleich(druckDatum('2026-11-20'), 'Freitag, 20. November 2026');
+  gleich(druckDatum(''), '');
+  gleich(druckDatum('demnächst'), 'demnächst');
 });
 
 // ---- Offline: alle benötigten Dateien stehen in der Liste des Service Workers ----
