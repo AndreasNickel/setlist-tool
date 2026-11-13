@@ -1,0 +1,19 @@
+# Songdaten gehören nicht ins öffentliche Repository
+*.setlist.json
+*.docx
+*.doc
+daten/
+private/
+
+# Betriebssystem
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editoren
+.vscode/
+.idea/
+*.swp
+
+# Werkzeuge (falls später genutzt)
+node_modules/
