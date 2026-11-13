@@ -26,7 +26,16 @@ export async function zeigeEditor(app, setlistId) {
   }
 
   // ---- Kopfleiste ----
-  const kopf = pflegeKopf('setlists', setlist ? h('a.ed-kopf-link', { href: '#/buehne/' + encodeURIComponent(setlist.id) }, 'Auf der Bühne öffnen') : null);
+  const drucken = async (e) => {
+    e.preventDefault();
+    await speichere();
+    location.hash = '#/druck/' + encodeURIComponent(setlist.id);
+  };
+  const kopf = pflegeKopf(
+    'setlists',
+    setlist ? h('a.ed-kopf-link', { href: '#/druck/' + encodeURIComponent(setlist.id), onclick: drucken, title: 'Setlist für Mitmusiker drucken oder als PDF speichern' }, 'Drucken / PDF') : null,
+    setlist ? h('a.ed-kopf-link', { href: '#/buehne/' + encodeURIComponent(setlist.id) }, 'Auf der Bühne öffnen') : null
+  );
 
   // ---- Linke Spalte: Auftritte ----
   const neu = async () => {

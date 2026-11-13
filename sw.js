@@ -35,6 +35,7 @@ const DATEIEN = [
   './js/word-import.js',
   './js/zip.js',
   './js/views/editor.js',
+  './js/views/druck.js',
   './js/views/einstellungen.js',
   './js/views/import.js',
   './js/views/liste.js',

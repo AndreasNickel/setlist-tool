@@ -6,6 +6,7 @@
 //   #/songs[/<id>]         Song-Bestand (Laptop)
 //   #/import               Word-Import (Laptop)
 //   #/sichern              Sichern & Übertragen (Export/Import, Offline)
+//   #/druck/<id>           Druckansicht einer Setlist (Drucken / PDF für Mitmusiker)
 //   #/einstellungen        Schriftgrößen usw.
 import { ladeEinstellungen } from './einstellungen.js';
 import { zeigeStart } from './views/start.js';
@@ -15,6 +16,7 @@ import { zeigeEditor } from './views/editor.js';
 import { zeigeSongs } from './views/songs.js';
 import { zeigeImport } from './views/import.js';
 import { zeigeSichern } from './views/sichern.js';
+import { zeigeDruck } from './views/druck.js';
 import { starteOffline } from './offline.js';
 import { zeigeEinstellungen } from './views/einstellungen.js';
 import { wachHalten } from './wachhalten.js';
@@ -55,6 +57,10 @@ async function navigiere() {
       document.body.className = 'pflege';
       wachHalten(false);
       aufraeumen = await zeigeSichern(app);
+    } else if (bereich === 'druck' && a) {
+      document.body.className = 'pflege druck';
+      wachHalten(false);
+      aufraeumen = await zeigeDruck(app, a);
     } else if (bereich === 'einstellungen') {
       document.body.className = 'buehne';
       wachHalten(false);

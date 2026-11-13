@@ -24,6 +24,7 @@ und im Browser öffnen:
 - `http://localhost:8000/#/songs` – Song-Bestand (Laptop)
 - `http://localhost:8000/#/import` – Word-Import (Laptop)
 - `http://localhost:8000/#/sichern` – Sichern & Übertragen (Export/Import, Offline-Status)
+- `http://localhost:8000/#/druck/<id>` – Setlist drucken / als PDF (Knopf „Drucken / PDF“ im Editor)
 - `http://localhost:8000/tests/` – Tests der Logik
 
 Zum Ausprobieren gibt es auf der leeren Startseite „Beispieldaten laden“ (nur Platzhaltertexte).
