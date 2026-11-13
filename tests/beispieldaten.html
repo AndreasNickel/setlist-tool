@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Beispieldaten laden</title>
+</head>
+<body>
+<p id="status">lädt …</p>
+<script type="module">
+// Hilfsseite für Tests: legt Platzhalter-Songs und eine Beispiel-Setlist an.
+import { ladeBeispieldaten } from '../js/beispieldaten.js';
+import { alleSetlists } from '../js/db.js';
+await ladeBeispieldaten();
+const s = await alleSetlists();
+document.getElementById('status').textContent = 'fertig: ' + s.map((x) => x.id).join(',');
+</script>
+</body>
+</html>
